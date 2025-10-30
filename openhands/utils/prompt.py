@@ -90,6 +90,7 @@ class PromptManager:
         from openhands.agenthub.codeact_agent.tools.prompt import refine_prompt
 
         system_message = self.system_template.render(**context).strip()
+        print(f"[PromptManager] System message:\n{system_message}\n")
         return refine_prompt(system_message)
 
     def get_example_user_message(self) -> str:
