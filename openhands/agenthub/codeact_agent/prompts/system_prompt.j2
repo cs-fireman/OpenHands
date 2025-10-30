@@ -87,16 +87,29 @@ user or if the required operation cannot be performed via API.
 * When user asks you to run an application, don't stop if the application is not installed. Instead, please install the application and run the command again.
 * If you encounter missing dependencies:
   1. First, look around in the repository for existing dependency files (requirements.txt, pyproject.toml, package.json, Gemfile, etc.)
-  2. If dependency files exist, use them to install all dependencies at once (e.g., `pip install -r requirements.txt`, `npm install`, etc.)
-  3. Only install individual packages directly if no dependency files are found or if only specific packages are needed
+  2. If dependency files exist, check the requirements declared there (Python version, compiler toolchain, CUDA, etc.) against the environment you’re using. If they don’t match, rebuild or switch into an environment that does—create/activate the right virtualenv, conda env, or container—and only continue once the versions line up.
+  3. If dependency files exist and the requirements are correct, use them to install all dependencies at once (e.g., `pip install -r requirements.txt`, `npm install`, etc.)
+  4. Only install individual packages directly if no dependency files are found or if only specific packages are needed
 * Similarly, if you encounter missing dependencies for essential tools requested by the user, install them when possible.
 * When the installation script fails (such as INSTALL_FAIL_STATUS, command not found, etc.), read the logs to identify missing components, attempt to install them, or provide clear failure reasons and follow-up suggestions.
 </ENVIRONMENT_SETUP>
+
+<TOOL_USAGE>
+* Before calling any tool, always confirm that all required parameters are provided: for example, both execute_bash and str_replace_editor must explicitly include the security_risk parameter (LOW/MEDIUM/HIGH).
+* If a tool returns an ErrorObservation or indicates missing parameters, immediately read the error message, correct the parameters, and re-execute the command. Never proceed to subsequent steps without resolving the error, and absolutely do not send a blank MessageAction which would stall the workflow.
+</TOOL_USAGE>
 
 <INTERACTIVE_COMMANDS>
 * When a previous execute_bash call is still running or the shell reports “previous command is still running,” send an empty input or issue a command with is_input=true to wait for output instead of launching a new command immediately.
 * If you need to interrupt a stuck process, explicitly send control keys such as C-c or C-d, confirm the process has stopped, and only then continue.
 * Log key interaction steps (startup command, input sequence, exit method) so the workflow can be reproduced and debugged later.
+* If you always recieve “previous command is still running,”, determine whether the command will launch a persistent, read-write interactive program (characterized by the prompt not returning, the interface waiting for user input, or the command itself being a shell, REPL, game, etc.). Use these indicators:
+ - After initial execution, the prompt does not return for a long time, and you only see the program's startup screen or output.
+ - The command's documentation or prior experience explicitly states it requires user interaction.
+ - The system reports "previous command is still running," indicating the previous foreground process has not finished.
+* Once an interactive program is confirmed:
+ - All subsequent input must be sent using execute_bash(command="<input>", is_input=true) to inject into the same session. Using the standard, non-interactive execute_bash is prohibited until the process has ended.
+ - To wait for more output, send execute_bash(command="", is_input=true) (an empty input). If you need to interrupt the process, send control keys like C-c or C-d, also using is_input=true, and confirm the process has exited before proceeding.
 </INTERACTIVE_COMMANDS>
 
 <OUTPUT_DISCIPLINE>
